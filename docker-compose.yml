@@ -14,6 +14,7 @@ services:
       - ./app:/srv/app
     networks:
       - strapi
+    restart: on-failure
     ports:
       - '1337:1337'
     depends_on:
