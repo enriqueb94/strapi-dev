@@ -1,60 +1,42 @@
-version: "3"
+version: '3'
 services:
   strapi:
-    container_name: strapi
-    build: .
-    image: strapi:latest
-    restart: unless-stopped
-    env_file: .env
+    image: strapi/strapi
     environment:
-      DATABASE_CLIENT: ${DATABASE_CLIENT}
-      DATABASE_HOST: strapiDB
-      DATABASE_PORT: ${DATABASE_PORT}
-      DATABASE_NAME: ${DATABASE_NAME}
-      DATABASE_USERNAME: ${DATABASE_USERNAME}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
-      APP_KEYS: ${APP_KEYS}
-      NODE_ENV: ${NODE_ENV}
+      DATABASE_CLIENT: mysql
+      DATABASE_HOST: mysql
+      DATABASE_PORT: 3350
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: Strapi123
+      DATABASE_SSL: 'false'
     volumes:
-      - ./config:/opt/app/config
-      - ./src:/opt/app/src
-      - ./package.json:/opt/package.json
-      - ./yarn.lock:/opt/yarn.lock
-      - ./.env:/opt/app/.env
-      - ./public/uploads:/opt/app/public/uploads
-    ports:
-      - "1337:1337"
+      - ./app:/srv/app
     networks:
       - strapi
+    ports:
+      - '1337:1337'
     depends_on:
-      - strapiDB
+      - mysql
 
-  strapiDB:
-    container_name: strapiDB
-    platform: linux/amd64 #for platform error on Apple M1 chips
-    restart: unless-stopped
-    env_file: .env
+  mysql:
     image: mysql:5.7
-    command: --default-authentication-plugin=mysql_native_password
+    build: ./db
+    # Set max_allowed_packet to 256M (or any other value)
+    command: --max_allowed_packet=32505856
     environment:
-      MYSQL_USER: ${DATABASE_USERNAME}
-      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
-      MYSQL_PASSWORD: ${DATABASE_PASSWORD}
-      MYSQL_DATABASE: ${DATABASE_NAME}
-    volumes:
-      - strapi-data:/var/lib/mysql
-      #- ./data:/var/lib/mysql # if you want to use a bind folder
+        MYSQL_DATABASE: strapi
+        MYSQL_ROOT_PASSWORD: Strapi123
+        MYSQL_USER: strapi
+        MYSQL_PASSWORD: Strapi123
     ports:
-      - "3306:3306"
+        - "3350:3306"
+    volumes:
+        - ./mysql_data:/var/lib/mysql:z
     networks:
-      - strapi
-
-volumes:
-  strapi-data:
+        - strapi
+    restart: on-failure
 
 networks:
-  strapi:
-    name: Strapi
-    driver: bridge
+    strapi:
+        driver: bridge
